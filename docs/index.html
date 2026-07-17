@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO: Title and description -->
+    <title>ScheduleX — University Course & Exam Scheduler</title>
+    <meta name="description" content="BFS-based clash-free exam timetable generator. Models courses as graph nodes with prerequisite edges, applies Kahn's topological sort, and assigns conflict-free exam slots. Built with C++ compiled to WebAssembly.">
+    
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Our stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ====================================================================
+     SECTION 1: HERO
+     ==================================================================== -->
+<section class="hero" id="hero">
+    <div class="hero-content">
+        <!-- SIH badge -->
+        <span class="badge">SIH · Smart Education</span>
+        
+        <!-- Title with gradient effect -->
+        <h1><span class="gradient-text">ScheduleX</span></h1>
+        
+        <!-- Tagline explaining what this does -->
+        <p class="hero-tagline">
+            A BFS-powered, graph-based exam scheduler that builds clash-free 
+            timetables for students and faculty — running real C++ in your browser.
+        </p>
+        
+        <!-- Call to action button — scrolls down to the interactive tool -->
+        <a href="#try-it" class="btn-primary btn-generate" id="hero-cta">
+            &#9654; Try the Scheduler
+        </a>
+    </div>
+    
+    <!-- Animated down-arrow to hint the user can scroll -->
+    <div class="scroll-hint" aria-hidden="true">&#8595;</div>
+</section>
+
+
+<!-- ====================================================================
+     SECTION 2: ABOUT / PROBLEM STATEMENT
+     ==================================================================== -->
+<section class="about" id="about">
+    <div class="container">
+        
+        <!-- Section heading -->
+        <div class="section-heading fade-in">
+            <h2>About the <span class="gradient-text">Project</span></h2>
+            <p>
+                University Course &amp; Exam Scheduler — modelling courses as graph nodes 
+                with prerequisite dependencies as directed edges, using BFS-based 
+                topological ordering to generate clash-free timetables.
+            </p>
+        </div>
+        
+        <!-- 3 project outcome cards -->
+        <div class="outcome-cards">
+            
+            <!-- Outcome 1 -->
+            <div class="outcome-card fade-in fade-in-delay-1">
+                <span class="outcome-card-icon" aria-hidden="true">&#128279;</span>
+                <h3>Conflict Resolution</h3>
+                <p>
+                    Resolves scheduling conflicts using graph dependency analysis. 
+                    Two courses taught by the same faculty, or taken by the same student, 
+                    are guaranteed to never overlap.
+                </p>
+            </div>
+            
+            <!-- Outcome 2 -->
+            <div class="outcome-card fade-in fade-in-delay-2">
+                <span class="outcome-card-icon" aria-hidden="true">&#128197;</span>
+                <h3>Optimized Timetable</h3>
+                <p>
+                    Produces a compact, clash-free timetable for any sample dataset. 
+                    Supports multi-session batching for large courses that exceed 
+                    hall capacity.
+                </p>
+            </div>
+            
+            <!-- Outcome 3 -->
+            <div class="outcome-card fade-in fade-in-delay-3">
+                <span class="outcome-card-icon" aria-hidden="true">&#128200;</span>
+                <h3>Graph Traversal Insight</h3>
+                <p>
+                    Strengthens understanding of graph traversal in scheduling problems. 
+                    Watch Kahn's BFS algorithm sort prerequisites into a valid exam sequence.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Tech stack badges -->
+        <div class="tech-badges fade-in">
+            <span class="tech-badge">C++</span>
+            <span class="tech-badge">Graph</span>
+            <span class="tech-badge">BFS</span>
+            <span class="tech-badge">Kahn's Algorithm</span>
+            <span class="tech-badge">Arrays</span>
+            <span class="tech-badge">WebAssembly</span>
+        </div>
+        
+    </div>
+</section>
+
+
+<!-- ====================================================================
+     SECTION 3: HOW IT WORKS
+     ==================================================================== -->
+<section class="how-it-works" id="how-it-works">
+    <div class="container">
+        
+        <div class="section-heading fade-in">
+            <h2>How It <span class="gradient-text">Works</span></h2>
+            <p>
+                Four steps to go from a list of courses to a clash-free exam schedule.
+            </p>
+        </div>
+        
+        <div class="steps">
+            <!-- Step 1 -->
+            <div class="step fade-in fade-in-delay-1">
+                <span class="step-icon" aria-hidden="true">&#128992;</span>
+                <h3>Model as Graph</h3>
+                <p>Courses become nodes. Prerequisites become directed edges. Faculty &amp; student overlaps form the clash matrix.</p>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="step fade-in fade-in-delay-2">
+                <span class="step-icon" aria-hidden="true">&#128256;</span>
+                <h3>BFS / Kahn's Sort</h3>
+                <p>Topological sort ensures every prerequisite exam is scheduled before the course that depends on it.</p>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="step fade-in fade-in-delay-3">
+                <span class="step-icon" aria-hidden="true">&#128197;</span>
+                <h3>Greedy Placement</h3>
+                <p>Each course gets the earliest slot that respects the clash matrix, hall limits, and prerequisite ordering.</p>
+            </div>
+            
+            <!-- Step 4 -->
+            <div class="step fade-in fade-in-delay-4">
+                <span class="step-icon" aria-hidden="true">&#9989;</span>
+                <h3>Clash-Free Output</h3>
+                <p>The result: a Day × Session grid where no student or faculty member has two exams at the same time.</p>
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+
+<!-- ====================================================================
+     SECTION 4: TRY IT — THE INTERACTIVE SCHEDULER
+     ==================================================================== -->
+<section class="try-it" id="try-it">
+    <div class="container">
+        
+        <div class="section-heading fade-in">
+            <h2>Try the <span class="gradient-text">Scheduler</span></h2>
+            <p>
+                Enter your courses, prerequisites, students, and logistics below — 
+                or load sample data to see it in action instantly.
+            </p>
+        </div>
+        
+        <div class="scheduler-form fade-in" id="scheduler-form">
+            
+            <!-- ==================== COURSES ==================== -->
+            <div class="form-section" id="courses-section">
+                <div class="form-section-header">
+                    <h3><span class="section-icon" aria-hidden="true">&#128218;</span> Courses</h3>
+                    <button type="button" class="btn-add" id="add-course-btn">+ Add Course</button>
+                </div>
+                <!-- Course rows get added here dynamically by app.js -->
+                <div id="course-rows"></div>
+            </div>
+            
+            
+            <!-- ==================== PREREQUISITES ==================== -->
+            <div class="form-section" id="prereqs-section">
+                <div class="form-section-header">
+                    <h3><span class="section-icon" aria-hidden="true">&#128279;</span> Prerequisites</h3>
+                    <button type="button" class="btn-add" id="add-prereq-btn">+ Add Prerequisite</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+                    "Course A is a prerequisite for Course B" means A's exam must come before B's.
+                </p>
+                <!-- Prerequisite rows get added here dynamically -->
+                <div id="prereq-rows"></div>
+            </div>
+            
+            
+            <!-- ==================== STUDENTS ==================== -->
+            <div class="form-section" id="students-section">
+                <div class="form-section-header">
+                    <h3><span class="section-icon" aria-hidden="true">&#127891;</span> Students</h3>
+                    <button type="button" class="btn-add" id="add-student-btn">+ Add Student</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+                    Select the courses each student is enrolled in. Students taking the same courses can't have overlapping exams.
+                </p>
+                <!-- Student rows get added here dynamically -->
+                <div id="student-rows"></div>
+            </div>
+            
+            
+            <!-- ==================== LOGISTICS ==================== -->
+            <div class="form-section" id="logistics-section">
+                <div class="form-section-header">
+                    <h3><span class="section-icon" aria-hidden="true">&#9881;</span> Exam Logistics</h3>
+                </div>
+                <div class="logistics-grid">
+                    <div class="form-group">
+                        <label for="hall-capacity">Hall Capacity (seats)</label>
+                        <input type="number" id="hall-capacity" value="100" min="1" placeholder="e.g. 100">
+                    </div>
+                    <div class="form-group">
+                        <label for="halls-available">Halls Available</label>
+                        <input type="number" id="halls-available" value="3" min="1" placeholder="e.g. 3">
+                    </div>
+                    <div class="form-group">
+                        <label for="sessions-per-day">Sessions per Day</label>
+                        <input type="number" id="sessions-per-day" value="2" min="1" placeholder="e.g. 2">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-days">Days Available</label>
+                        <input type="number" id="max-days" value="7" min="1" placeholder="e.g. 7">
+                    </div>
+                </div>
+            </div>
+            
+            
+            <!-- ==================== ACTION BUTTONS ==================== -->
+            <div class="form-actions">
+                <button type="button" class="btn-primary btn-generate" id="generate-btn">
+                    &#9654; Generate Schedule
+                </button>
+                <button type="button" class="btn-secondary" id="sample-data-btn">
+                    &#128203; Load Sample Data
+                </button>
+                <button type="button" class="btn-secondary" id="clear-btn">
+                    &#128465; Clear All
+                </button>
+            </div>
+            
+        </div>
+        
+        
+        <!-- ==================== RESULTS ==================== -->
+        <div class="results-panel" id="results-panel">
+            
+            <!-- Alert banner (success / warning / error) — dynamically filled -->
+            <div id="result-alert"></div>
+            
+            <!-- Topological order -->
+            <div class="result-section" id="result-topo">
+                <h3>&#128256; Topological Order (BFS / Kahn's)</h3>
+                <ol class="topo-order-list" id="topo-order-list"></ol>
+            </div>
+            
+            <!-- Timetable grid -->
+            <div class="result-section" id="result-timetable">
+                <h3>&#128197; Exam Timetable</h3>
+                <div class="timetable-grid" id="timetable-grid"></div>
+            </div>
+            
+            <!-- Faculty schedule -->
+            <div class="result-section" id="result-faculty">
+                <h3>&#128188; Faculty Schedule</h3>
+                <div id="faculty-schedules"></div>
+            </div>
+            
+            <!-- Student schedule -->
+            <div class="result-section" id="result-students">
+                <h3>&#127891; Student Schedule</h3>
+                <div id="student-schedules"></div>
+            </div>
+            
+        </div>
+        
+    </div>
+</section>
+
+
+<!-- ====================================================================
+     SECTION 5: FOOTER
+     ==================================================================== -->
+<footer id="footer">
+    <div class="container">
+        <div class="footer-content">
+            
+            <div class="footer-people">
+                <!-- Developer 1 -->
+                <div class="footer-person">
+                    <h4>Priyanshu Kamal</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/priyanshukamal26/" target="_blank" rel="noopener">
+                            &#128187; GitHub
+                        </a>
+                        <a href="https://www.linkedin.com/in/priyanshukamal/" target="_blank" rel="noopener">
+                            &#128101; LinkedIn
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Developer 2 (placeholder — search for PARTNER to update) -->
+                <div class="footer-person">
+                    <h4>PARTNER_NAME</h4>
+                    <div class="footer-links">
+                        <a href="PARTNER_GITHUB" target="_blank" rel="noopener">
+                            &#128187; GitHub
+                        </a>
+                        <a href="PARTNER_LINKEDIN" target="_blank" rel="noopener">
+                            &#128101; LinkedIn
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>University Course &amp; Exam Scheduler &mdash; SIH Smart Education Theme</p>
+                <p>Built with C++, Graph Theory, BFS &amp; WebAssembly</p>
+            </div>
+            
+        </div>
+    </div>
+</footer>
+
+
+<!-- ====================================================================
+     SCRIPTS
+     ==================================================================== -->
+<!-- 
+     app.js contains everything:
+       - Form management (add/remove courses, prerequisites, students)
+       - The scheduling algorithm (JS port of the C++ core — used as fallback
+         when WASM isn't available, but runs the exact same logic)
+       - Result rendering (timetable grid, schedules, alerts)
+       - Scroll animations
+-->
+<script src="app.js"></script>
+
+</body>
+</html>

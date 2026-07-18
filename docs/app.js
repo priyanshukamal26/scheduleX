@@ -70,7 +70,9 @@ function addCourseRow(name = '', faculty = '') {
     row.innerHTML = `
         <input type="text" id="course-name-${id}" placeholder="Course name (e.g. Data Structures)" value="${escapeHtml(name)}">
         <input type="text" id="course-faculty-${id}" placeholder="Faculty (e.g. Dr. Sharma)" value="${escapeHtml(faculty)}">
-        <button type="button" class="btn-remove" onclick="removeCourseRow(this)" title="Remove this course">&times;</button>
+        <button type="button" class="btn-remove" onclick="removeCourseRow(this)" title="Remove this course">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
     `;
     courseRowsContainer.appendChild(row);
     
@@ -115,9 +117,11 @@ function addPrereqRow(fromIdx = -1, toIdx = -1) {
     row.dataset.prereqId = id;
     row.innerHTML = `
         <select id="prereq-from-${id}">${options}</select>
-        <span style="color: var(--text-muted); font-size: 0.85rem; white-space: nowrap;">&#8594; is prerequisite for &#8594;</span>
+        <span class="prereq-arrow"><span class="material-symbols-outlined" style="font-size:1.2rem">arrow_forward</span></span>
         <select id="prereq-to-${id}">${options}</select>
-        <button type="button" class="btn-remove" onclick="removePrereqRow(this)" title="Remove">&times;</button>
+        <button type="button" class="btn-remove" onclick="removePrereqRow(this)" title="Remove">
+            <span class="material-symbols-outlined">close</span>
+        </button>
     `;
     prereqRowsContainer.appendChild(row);
     
@@ -147,17 +151,19 @@ function addStudentRow(name = '', selectedCourses = []) {
     }).join('');
     
     const row = document.createElement('div');
-    row.className = 'input-row';
+    row.className = 'input-row student-card';
     row.dataset.studentId = id;
     row.style.flexDirection = 'column';
     row.style.alignItems = 'stretch';
     row.innerHTML = `
-        <div style="display: flex; gap: var(--space-sm); align-items: center;">
-            <input type="text" id="student-name-${id}" placeholder="Student name" value="${escapeHtml(name)}" style="flex: 1;">
-            <button type="button" class="btn-remove" onclick="removeStudentRow(this)" title="Remove">&times;</button>
+        <div class="student-card-header">
+            <input type="text" id="student-name-${id}" placeholder="Student name" value="${escapeHtml(name)}">
+            <button type="button" class="btn-remove" onclick="removeStudentRow(this)" title="Remove">
+                <span class="material-symbols-outlined">close</span>
+            </button>
         </div>
         <div class="student-courses-list" id="student-courses-${id}">
-            ${checkboxes || '<span style="color: var(--text-muted); font-size: 0.85rem;">Add courses first</span>'}
+            ${checkboxes || '<span style="color: #757685; font-size: 0.85rem;">Add courses first</span>'}
         </div>
     `;
     studentRowsContainer.appendChild(row);
@@ -229,7 +235,7 @@ function updateStudentCheckboxes() {
         
         // Rebuild the checkboxes.
         if (courses.length === 0) {
-            checkboxList.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Add courses first</span>';
+            checkboxList.innerHTML = '<span style="color: #757685; font-size: 0.85rem;">Add courses first</span>';
             return;
         }
         
@@ -563,6 +569,16 @@ function getSlotLabel(slot, sessionsPerDay) {
     return `Day ${day} Session ${session}`;
 }
 
+// Color palette for course chips in the timetable.
+const CHIP_COLORS = [
+    { bg: '#002fa7', text: 'white' },
+    { bg: '#FF876A', text: '#1a1a1a' },
+    { bg: '#FFE500', text: '#1a1a1a' },
+    { bg: '#7a1801', text: 'white' },
+    { bg: '#001e73', text: 'white' },
+    { bg: '#5f5e5e', text: 'white' },
+];
+
 
 function renderResults(result, input) {
     // Make the results panel visible.
@@ -576,7 +592,8 @@ function renderResults(result, input) {
         // Cycle detected!
         resultAlert.innerHTML = `
             <div class="alert-banner error">
-                &#9888; Can't build a schedule — there's a cycle in the prerequisites. 
+                <span class="material-symbols-outlined">error</span>
+                Can't build a schedule — there's a cycle in the prerequisites. 
                 These courses are stuck depending on each other: 
                 <strong>${result.cycleCourses.map(escapeHtml).join(', ')}</strong>
             </div>
@@ -599,25 +616,36 @@ function renderResults(result, input) {
     if (result.fitsInAvailableDays) {
         resultAlert.innerHTML = `
             <div class="alert-banner success">
-                &#9989; Schedule generated successfully! Fits in your ${input.maxDays} available day(s) 
+                <span class="material-symbols-outlined">check_circle</span>
+                Schedule generated successfully! Fits in your ${input.maxDays} available day(s) 
                 (actually uses ${result.totalDaysUsed}).
             </div>
         `;
     } else {
         resultAlert.innerHTML = `
             <div class="alert-banner warning">
-                &#9888; This schedule needs ${result.totalDaysUsed} day(s), but you only have 
+                <span class="material-symbols-outlined">warning</span>
+                This schedule needs ${result.totalDaysUsed} day(s), but you only have 
                 ${input.maxDays}. Try adding more halls, more sessions per day, or reducing clashes.
             </div>
         `;
     }
     
-    // --- Topological order ---
+    // --- Topological order (chips with arrows) ---
     topoOrderList.innerHTML = '';
     result.topoOrder.forEach((courseIdx, rank) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="topo-num">${rank + 1}.</span> ${escapeHtml(input.courses[courseIdx].name)}`;
-        topoOrderList.appendChild(li);
+        // Add arrow separator before all items except the first
+        if (rank > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'topo-arrow';
+            arrow.innerHTML = '<span class="material-symbols-outlined">arrow_forward</span>';
+            topoOrderList.appendChild(arrow);
+        }
+        
+        const chip = document.createElement('span');
+        chip.className = 'topo-chip';
+        chip.textContent = `${rank + 1}. ${input.courses[courseIdx].name}`;
+        topoOrderList.appendChild(chip);
     });
     
     // --- Timetable grid ---
@@ -636,67 +664,58 @@ function renderTimetableGrid(result, input) {
     const totalDays = result.totalDaysUsed;
     const totalSlots = result.slotCourses.length;
     
-    // Set the CSS grid columns: [day label] + [one column per session]
-    timetableGrid.style.gridTemplateColumns = `auto ${'1fr '.repeat(sessionsPerDay)}`;
-    timetableGrid.innerHTML = '';
+    // Build an HTML table
+    let html = '<table class="timetable-table">';
     
-    // Header row: empty corner + session labels
-    const corner = document.createElement('div');
-    corner.className = 'timetable-header-cell';
-    corner.textContent = 'Day';
-    timetableGrid.appendChild(corner);
-    
+    // Header row
+    html += '<thead><tr>';
+    html += '<th>Day</th>';
     for (let se = 0; se < sessionsPerDay; se++) {
-        const header = document.createElement('div');
-        header.className = 'timetable-header-cell';
         if (sessionsPerDay === 2) {
-            header.textContent = se === 0 ? 'Morning' : 'Afternoon';
+            html += `<th>${se === 0 ? 'Morning' : 'Afternoon'}</th>`;
         } else {
-            header.textContent = `Session ${se + 1}`;
+            html += `<th>Session ${se + 1}</th>`;
         }
-        timetableGrid.appendChild(header);
     }
+    html += '</tr></thead>';
     
-    // Data rows: one per day.
+    // Body rows
+    html += '<tbody>';
     for (let d = 0; d < totalDays; d++) {
-        // Day label.
-        const dayLabel = document.createElement('div');
-        dayLabel.className = 'timetable-day-label';
-        dayLabel.textContent = `Day ${d + 1}`;
-        timetableGrid.appendChild(dayLabel);
+        html += '<tr>';
+        html += `<td class="timetable-day-label">Day ${d + 1}</td>`;
         
-        // One cell per session.
         for (let se = 0; se < sessionsPerDay; se++) {
             const slot = d * sessionsPerDay + se;
-            const cell = document.createElement('div');
-            cell.className = 'timetable-cell';
+            html += '<td>';
             
             if (slot < totalSlots && result.slotCourses[slot].length > 0) {
-                // Add a chip for each course in this slot.
                 for (const c of result.slotCourses[slot]) {
-                    const chip = document.createElement('span');
-                    let label = input.courses[c].name;
+                    let label = escapeHtml(input.courses[c].name);
+                    const colorIdx = c % CHIP_COLORS.length;
+                    let extraClass = '';
                     
                     // If this course is batched, show which batch.
                     if (result.sessionsNeeded[c] > 1) {
                         const batchNum = slot - result.startSlot[c] + 1;
                         label += ` (B${batchNum}/${result.sessionsNeeded[c]})`;
-                        chip.className = 'course-chip batch';
-                    } else {
-                        chip.className = 'course-chip';
+                        extraClass = ' batch';
                     }
                     
-                    chip.textContent = label;
-                    cell.appendChild(chip);
+                    html += `<div class="course-chip chip-color-${colorIdx}${extraClass}" style="${extraClass ? '' : `background:${CHIP_COLORS[colorIdx].bg};color:${CHIP_COLORS[colorIdx].text}`}">${label}</div>`;
                 }
             } else {
-                cell.classList.add('empty');
-                cell.textContent = '—';
+                html += '<span class="timetable-cell-empty">—</span>';
             }
             
-            timetableGrid.appendChild(cell);
+            html += '</td>';
         }
+        
+        html += '</tr>';
     }
+    html += '</tbody></table>';
+    
+    timetableGrid.innerHTML = html;
 }
 
 
@@ -723,17 +742,12 @@ function renderFacultySchedule(result, input) {
         }
         items.sort((a, b) => a.slot - b.slot);
         
-        // Build a collapsible group.
-        const group = document.createElement('div');
-        group.className = 'schedule-group';
+        // Build a collapsible <details> group.
+        const details = document.createElement('details');
+        details.className = 'schedule-group';
         
-        const header = document.createElement('div');
-        header.className = 'schedule-group-header';
-        header.innerHTML = `<span class="chevron">&#9654;</span> ${escapeHtml(fac)}`;
-        header.addEventListener('click', () => {
-            header.classList.toggle('open');
-            itemsDiv.classList.toggle('open');
-        });
+        const summary = document.createElement('summary');
+        summary.innerHTML = `${escapeHtml(fac)} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
         
         const itemsDiv = document.createElement('div');
         itemsDiv.className = 'schedule-group-items';
@@ -746,13 +760,13 @@ function renderFacultySchedule(result, input) {
             if (result.sessionsNeeded[item.courseIdx] > 1) {
                 extra = ` (needs ${result.sessionsNeeded[item.courseIdx]} sessions)`;
             }
-            div.innerHTML = `<span class="slot-label">${label}</span> &#8594; ${escapeHtml(input.courses[item.courseIdx].name)}${extra}`;
+            div.innerHTML = `<span class="slot-label">${label}</span> <span>— ${escapeHtml(input.courses[item.courseIdx].name)}${extra}</span>`;
             itemsDiv.appendChild(div);
         }
         
-        group.appendChild(header);
-        group.appendChild(itemsDiv);
-        facultySchedules.appendChild(group);
+        details.appendChild(summary);
+        details.appendChild(itemsDiv);
+        facultySchedules.appendChild(details);
     }
 }
 
@@ -767,16 +781,14 @@ function renderStudentSchedule(result, input) {
         }));
         items.sort((a, b) => a.slot - b.slot);
         
-        const group = document.createElement('div');
-        group.className = 'schedule-group';
+        // Build a collapsible <details> group.
+        const details = document.createElement('details');
+        details.className = 'schedule-group';
+        // Open the first student by default
+        if (i === 0) details.open = true;
         
-        const header = document.createElement('div');
-        header.className = 'schedule-group-header';
-        header.innerHTML = `<span class="chevron">&#9654;</span> ${escapeHtml(input.studentNames[i])}`;
-        header.addEventListener('click', () => {
-            header.classList.toggle('open');
-            itemsDiv.classList.toggle('open');
-        });
+        const summary = document.createElement('summary');
+        summary.innerHTML = `${escapeHtml(input.studentNames[i])} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
         
         const itemsDiv = document.createElement('div');
         itemsDiv.className = 'schedule-group-items';
@@ -791,14 +803,14 @@ function renderStudentSchedule(result, input) {
                 const div = document.createElement('div');
                 div.className = 'schedule-item';
                 const label = getSlotLabel(item.slot, input.sessionsPerDay);
-                div.innerHTML = `<span class="slot-label">${label}</span> &#8594; ${escapeHtml(input.courses[item.courseIdx].name)}`;
+                div.innerHTML = `<span class="slot-label">${label}</span> <span>— ${escapeHtml(input.courses[item.courseIdx].name)}</span>`;
                 itemsDiv.appendChild(div);
             }
         }
         
-        group.appendChild(header);
-        group.appendChild(itemsDiv);
-        studentSchedules.appendChild(group);
+        details.appendChild(summary);
+        details.appendChild(itemsDiv);
+        studentSchedules.appendChild(details);
     }
 }
 
@@ -909,7 +921,7 @@ generateBtn.addEventListener('click', () => {
     // Check for validation errors.
     if (input.error) {
         resultsPanel.classList.add('visible');
-        resultAlert.innerHTML = `<div class="alert-banner error">&#9888; ${escapeHtml(input.error)}</div>`;
+        resultAlert.innerHTML = `<div class="alert-banner error"><span class="material-symbols-outlined">error</span> ${escapeHtml(input.error)}</div>`;
         document.getElementById('result-topo').style.display = 'none';
         document.getElementById('result-timetable').style.display = 'none';
         document.getElementById('result-faculty').style.display = 'none';

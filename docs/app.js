@@ -59,15 +59,31 @@ let studentCounter = 0;
 // --- COURSES ---
 // Each course row has: name input + faculty input + remove button.
 
+// Helper to update row numbers and header counts
+function updateRowNumbers(containerId, totalId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const rows = container.querySelectorAll('.input-row');
+    rows.forEach((row, index) => {
+        const numSpan = row.querySelector('.row-number');
+        if (numSpan) {
+            numSpan.textContent = `${index + 1}.`;
+        }
+    });
+    const totalEl = document.getElementById(totalId);
+    if (totalEl) {
+        totalEl.textContent = rows.length;
+    }
+}
+
 function addCourseRow(name = '', faculty = '') {
-    // Create a unique ID for this row.
     const id = courseCounter++;
     
-    // Build the HTML for one course row.
     const row = document.createElement('div');
     row.className = 'input-row';
     row.dataset.courseId = id;
     row.innerHTML = `
+        <span class="row-number font-mono text-sm font-bold w-6 text-right select-none pr-1"></span>
         <input type="text" id="course-name-${id}" placeholder="Course name (e.g. Data Structures)" value="${escapeHtml(name)}">
         <input type="text" id="course-faculty-${id}" placeholder="Faculty (e.g. Dr. Sharma)" value="${escapeHtml(faculty)}">
         <button type="button" class="btn-remove" onclick="removeCourseRow(this)" title="Remove this course">
@@ -76,8 +92,6 @@ function addCourseRow(name = '', faculty = '') {
     `;
     courseRowsContainer.appendChild(row);
     
-    // Whenever courses change, update the prerequisite dropdowns and
-    // student checkboxes so they reflect the current course list.
     row.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
             updatePrereqDropdowns();
@@ -87,16 +101,16 @@ function addCourseRow(name = '', faculty = '') {
     
     updatePrereqDropdowns();
     updateStudentCheckboxes();
+    updateRowNumbers('course-rows', 'courses-total');
 }
 
 function removeCourseRow(button) {
-    // Find the row that contains this button and remove it.
     const row = button.closest('.input-row');
     row.remove();
     
-    // Update dependent UI elements.
     updatePrereqDropdowns();
     updateStudentCheckboxes();
+    updateRowNumbers('course-rows', 'courses-total');
 }
 
 
@@ -106,7 +120,6 @@ function removeCourseRow(button) {
 function addPrereqRow(fromIdx = -1, toIdx = -1) {
     const id = prereqCounter++;
     
-    // Get the current list of courses for the dropdown options.
     const courses = getCurrentCourses();
     const options = courses.map((c, i) => 
         `<option value="${i}">${escapeHtml(c.name || `Course ${i + 1}`)}</option>`
@@ -116,6 +129,7 @@ function addPrereqRow(fromIdx = -1, toIdx = -1) {
     row.className = 'input-row';
     row.dataset.prereqId = id;
     row.innerHTML = `
+        <span class="row-number font-mono text-sm font-bold w-6 text-right select-none pr-1"></span>
         <select id="prereq-from-${id}">${options}</select>
         <span class="prereq-arrow"><span class="material-symbols-outlined" style="font-size:1.2rem">arrow_forward</span></span>
         <select id="prereq-to-${id}">${options}</select>
@@ -125,13 +139,15 @@ function addPrereqRow(fromIdx = -1, toIdx = -1) {
     `;
     prereqRowsContainer.appendChild(row);
     
-    // If specific indices were provided (e.g., from sample data), select them.
     if (fromIdx >= 0) row.querySelector(`#prereq-from-${id}`).value = fromIdx;
     if (toIdx >= 0) row.querySelector(`#prereq-to-${id}`).value = toIdx;
+    
+    updateRowNumbers('prereq-rows', 'prereqs-total');
 }
 
 function removePrereqRow(button) {
     button.closest('.input-row').remove();
+    updateRowNumbers('prereq-rows', 'prereqs-total');
 }
 
 
@@ -142,8 +158,6 @@ function addStudentRow(name = '', selectedCourses = []) {
     const id = studentCounter++;
     
     const courses = getCurrentCourses();
-    
-    // Build checkbox items for each course.
     const checkboxes = courses.map((c, i) => {
         const checked = selectedCourses.includes(i) ? 'checked' : '';
         const label = c.name || `Course ${i + 1}`;
@@ -157,7 +171,10 @@ function addStudentRow(name = '', selectedCourses = []) {
     row.style.alignItems = 'stretch';
     row.innerHTML = `
         <div class="student-card-header">
-            <input type="text" id="student-name-${id}" placeholder="Student name" value="${escapeHtml(name)}">
+            <div class="flex items-center">
+                <span class="row-number font-mono text-sm font-bold mr-2 select-none"></span>
+                <input type="text" id="student-name-${id}" placeholder="Student name" value="${escapeHtml(name)}">
+            </div>
             <button type="button" class="btn-remove" onclick="removeStudentRow(this)" title="Remove">
                 <span class="material-symbols-outlined">close</span>
             </button>
@@ -167,10 +184,12 @@ function addStudentRow(name = '', selectedCourses = []) {
         </div>
     `;
     studentRowsContainer.appendChild(row);
+    updateRowNumbers('student-rows', 'students-total');
 }
 
 function removeStudentRow(button) {
     button.closest('.input-row').remove();
+    updateRowNumbers('student-rows', 'students-total');
 }
 
 
@@ -623,10 +642,14 @@ function renderResults(result, input) {
         `;
     } else {
         resultAlert.innerHTML = `
-            <div class="alert-banner warning">
-                <span class="material-symbols-outlined">warning</span>
-                This schedule needs ${result.totalDaysUsed} day(s), but you only have 
-                ${input.maxDays}. Try adding more halls, more sessions per day, or reducing clashes.
+            <div class="alert-banner warning flex flex-col items-start gap-2">
+                <div class="flex items-center gap-2 font-bold">
+                    <span class="material-symbols-outlined">warning</span>
+                    Constraint Warning: This schedule needs ${result.totalDaysUsed} day(s), exceeding your limit of ${input.maxDays}.
+                </div>
+                <div class="text-sm font-normal opacity-90 pl-8 text-left">
+                    A practically feasible timetable has been generated below using the minimum required days (${result.totalDaysUsed}) to satisfy all conflict and prerequisite constraints. To reduce total days, try increasing the number of available halls, increasing sessions per day, or adjusting course conflicts.
+                </div>
             </div>
         `;
     }
@@ -732,7 +755,10 @@ function renderFacultySchedule(result, input) {
         }
     }
     
-    for (const fac of uniqueFaculty) {
+    const totalEl = document.getElementById('faculty-total');
+    if (totalEl) totalEl.textContent = uniqueFaculty.length;
+    
+    uniqueFaculty.forEach((fac, idx) => {
         // Get this faculty's courses, sorted by slot.
         const items = [];
         for (let i = 0; i < n; i++) {
@@ -747,7 +773,7 @@ function renderFacultySchedule(result, input) {
         details.className = 'schedule-group';
         
         const summary = document.createElement('summary');
-        summary.innerHTML = `${escapeHtml(fac)} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
+        summary.innerHTML = `<span class="font-mono text-sm font-bold mr-2 opacity-65 select-none">${idx + 1}.</span>${escapeHtml(fac)} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
         
         const itemsDiv = document.createElement('div');
         itemsDiv.className = 'schedule-group-items';
@@ -767,12 +793,15 @@ function renderFacultySchedule(result, input) {
         details.appendChild(summary);
         details.appendChild(itemsDiv);
         facultySchedules.appendChild(details);
-    }
+    });
 }
 
 
 function renderStudentSchedule(result, input) {
     studentSchedules.innerHTML = '';
+    
+    const totalEl = document.getElementById('students-output-total');
+    if (totalEl) totalEl.textContent = input.studentNames.length;
     
     for (let i = 0; i < input.studentNames.length; i++) {
         const items = input.studentCourses[i].map(c => ({
@@ -788,7 +817,7 @@ function renderStudentSchedule(result, input) {
         if (i === 0) details.open = true;
         
         const summary = document.createElement('summary');
-        summary.innerHTML = `${escapeHtml(input.studentNames[i])} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
+        summary.innerHTML = `<span class="font-mono text-sm font-bold mr-2 opacity-65 select-none">${i + 1}.</span>${escapeHtml(input.studentNames[i])} <span class="material-symbols-outlined expand-icon">expand_more</span>`;
         
         const itemsDiv = document.createElement('div');
         itemsDiv.className = 'schedule-group-items';
@@ -821,46 +850,93 @@ function renderStudentSchedule(result, input) {
 // A realistic 6-course dataset so users can try the scheduler instantly.
 
 function loadSampleData() {
-    // Clear existing data.
     clearAll();
     
-    // Add 6 courses with faculty.
+    // 9 Courses with 5 teachers (full Indian names)
     const sampleCourses = [
-        { name: 'Intro to Programming', faculty: 'Dr. Sharma' },
-        { name: 'Data Structures', faculty: 'Dr. Sharma' },
-        { name: 'Discrete Maths', faculty: 'Dr. Gupta' },
-        { name: 'Database Systems', faculty: 'Dr. Patel' },
-        { name: 'Algorithms', faculty: 'Dr. Gupta' },
-        { name: 'Operating Systems', faculty: 'Dr. Patel' }
+        { name: 'Intro to Programming', faculty: 'Dr. Amit Sharma' },      // 0
+        { name: 'Data Structures', faculty: 'Dr. Amit Sharma' },           // 1
+        { name: 'Discrete Mathematics', faculty: 'Dr. Rajesh Gupta' },     // 2
+        { name: 'Database Systems', faculty: 'Dr. Sunita Patel' },         // 3
+        { name: 'Design of Algorithms', faculty: 'Dr. Rajesh Gupta' },     // 4
+        { name: 'Operating Systems', faculty: 'Dr. Sunita Patel' },        // 5
+        { name: 'Computer Networks', faculty: 'Dr. Vikram Singh' },        // 6
+        { name: 'Web Development', faculty: 'Dr. Ananya Rao' },            // 7
+        { name: 'Artificial Intelligence', faculty: 'Dr. Ananya Rao' }      // 8
     ];
     
     for (const c of sampleCourses) {
         addCourseRow(c.name, c.faculty);
     }
     
-    // Add prerequisites (0-based indices):
-    //   Intro to Programming → Data Structures
-    //   Intro to Programming → Database Systems
-    //   Data Structures → Algorithms
-    //   Discrete Maths → Algorithms
+    // 8 Prerequisites (0-based course indices)
     const samplePrereqs = [
-        { from: 0, to: 1 },
-        { from: 0, to: 3 },
-        { from: 1, to: 4 },
-        { from: 2, to: 4 }
+        { from: 0, to: 1 }, // Intro to Prog -> Data Structures
+        { from: 0, to: 3 }, // Intro to Prog -> Database Systems
+        { from: 1, to: 4 }, // Data Structures -> Algorithms
+        { from: 2, to: 4 }, // Discrete Maths -> Algorithms
+        { from: 1, to: 5 }, // Data Structures -> OS
+        { from: 3, to: 7 }, // Database Systems -> Web Dev
+        { from: 4, to: 8 }, // Algorithms -> AI
+        { from: 6, to: 8 }  // Networks -> AI
     ];
     
     for (const p of samplePrereqs) {
         addPrereqRow(p.from, p.to);
     }
     
-    // Add 5 students with their course enrollments.
+    // 50 Indian Students (including requested names)
     const sampleStudents = [
-        { name: 'Aarav', courses: [0, 1, 2] },
-        { name: 'Priya', courses: [0, 2, 3] },
-        { name: 'Rohan', courses: [1, 4, 5] },
-        { name: 'Sneha', courses: [0, 3, 5] },
-        { name: 'Kiran', courses: [2, 4, 5] }
+        { name: 'Priyanshu Kamal', courses: [0, 1, 2, 4] },
+        { name: 'Shambhavi Nayak', courses: [1, 3, 5, 8] },
+        { name: 'Shivani Butolia', courses: [2, 4, 6, 7] },
+        { name: 'Aarav Mehta', courses: [0, 1, 3] },
+        { name: 'Aditya Sharma', courses: [1, 2, 5] },
+        { name: 'Ananya Deshmukh', courses: [3, 4, 8] },
+        { name: 'Arjun Kapoor', courses: [0, 2, 6] },
+        { name: 'Diya Iyer', courses: [1, 3, 7] },
+        { name: 'Ishaan Nair', courses: [4, 5, 6] },
+        { name: 'Kavya Joshi', courses: [2, 3, 8] },
+        { name: 'Rohan Verma', courses: [0, 1, 5] },
+        { name: 'Sneha Reddy', courses: [1, 4, 7] },
+        { name: 'Kabir Malhotra', courses: [2, 6, 8] },
+        { name: 'Meera Kulkarni', courses: [0, 3, 5] },
+        { name: 'Vivaan Saxena', courses: [1, 5, 7] },
+        { name: 'Avani Bhat', courses: [2, 4, 8] },
+        { name: 'Devansh Choudhury', courses: [3, 6, 7] },
+        { name: 'Myra Sen', courses: [0, 4, 5] },
+        { name: 'Reyansh Trivedi', courses: [1, 2, 8] },
+        { name: 'Zara Khan', courses: [3, 5, 6] },
+        { name: 'Vihaan Mishra', courses: [0, 6, 7] },
+        { name: 'Riya Banerjee', courses: [1, 3, 8] },
+        { name: 'Atharv Patil', courses: [2, 5, 7] },
+        { name: 'Anika Gokhale', courses: [4, 6, 8] },
+        { name: 'Shaurya Pandey', courses: [0, 1, 7] },
+        { name: 'Saisha Shah', courses: [2, 3, 5] },
+        { name: 'Krishna Prasad', courses: [1, 4, 6] },
+        { name: 'Navya Aggarwal', courses: [3, 5, 8] },
+        { name: 'Aarush Gupta', courses: [0, 2, 7] },
+        { name: 'Isha Chawla', courses: [1, 5, 8] },
+        { name: 'Advait Bose', courses: [2, 6, 7] },
+        { name: 'Tanvi Hegde', courses: [3, 4, 6] },
+        { name: 'Dhruv Bhatia', courses: [0, 1, 8] },
+        { name: 'Diya Pillai', courses: [1, 2, 7] },
+        { name: 'Yash Singhal', courses: [3, 5, 7] },
+        { name: 'Prisha Mahajan', courses: [4, 6, 7] },
+        { name: 'Ayaan Dutta', courses: [0, 5, 8] },
+        { name: 'Kiara Sobti', courses: [1, 3, 6] },
+        { name: 'Samarth Shenoy', courses: [2, 4, 7] },
+        { name: 'Shruti Dwivedi', courses: [3, 6, 8] },
+        { name: 'Veer Bajwa', courses: [0, 4, 7] },
+        { name: 'Gayatri Das', courses: [1, 5, 6] },
+        { name: 'Hriday Bhardwaj', courses: [2, 3, 8] },
+        { name: 'Tanya Sethi', courses: [0, 6, 8] },
+        { name: 'Neil Roy', courses: [1, 4, 5] },
+        { name: 'Pooja Yadav', courses: [2, 5, 8] },
+        { name: 'Parth Varma', courses: [3, 4, 7] },
+        { name: 'Simran Dhillon', courses: [0, 1, 6] },
+        { name: 'Rishi Shukla', courses: [2, 4, 5] },
+        { name: 'Avanti Deshpande', courses: [3, 7, 8] }
     ];
     
     for (const s of sampleStudents) {
@@ -873,11 +949,6 @@ function loadSampleData() {
     document.getElementById('sessions-per-day').value = 2;
     document.getElementById('max-days').value = 7;
 }
-
-
-// ============================================================================
-// PART 7: CLEAR ALL
-// ============================================================================
 
 function clearAll() {
     courseRowsContainer.innerHTML = '';
@@ -892,6 +963,11 @@ function clearAll() {
     document.getElementById('halls-available').value = 3;
     document.getElementById('sessions-per-day').value = 2;
     document.getElementById('max-days').value = 7;
+    
+    // Reset header totals
+    updateRowNumbers('course-rows', 'courses-total');
+    updateRowNumbers('prereq-rows', 'prereqs-total');
+    updateRowNumbers('student-rows', 'students-total');
     
     // Hide results.
     resultsPanel.classList.remove('visible');

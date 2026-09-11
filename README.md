@@ -1,4 +1,4 @@
-# ScheduleX — High-Performance University Exam & Course Scheduler
+# ScheduleX : High-Performance University Exam Scheduler
 ### Graph-Theoretic Timetable Generator powered by C++, WebAssembly, and Neo-Brutalist UI
 
 ---
@@ -222,7 +222,4 @@ ScheduleX features a highly curated, premium visual design following **Neo-Bruta
 
 ## 8. Authors & Credits
 
-ScheduleX was designed and built as part of the **Smart India Hackathon (SIH) — Smart Education Theme**:
-
 - **Priyanshu Kamal** — [GitHub](https://github.com/priyanshukamal26/) · [LinkedIn](https://www.linkedin.com/in/priyanshukamal/)
-- **Shivani Butolia** — [GitHub](https://github.com/shiva08b) · [LinkedIn](https://www.linkedin.com/in/shivanibutolia/)
